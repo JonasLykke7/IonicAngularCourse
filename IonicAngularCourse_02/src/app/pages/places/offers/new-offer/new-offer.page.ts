@@ -9,7 +9,7 @@ export class NewOfferPage implements OnInit {
 
   constructor() { }
 
-  ngOnInit() {
+  ngOnInit(): void {
   }
 
 }
