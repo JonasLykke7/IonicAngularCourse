@@ -5,10 +5,15 @@ import { Router } from '@angular/router';
   providedIn: 'root'
 })
 export class AuthService {
-  private _userIsAuthenticated: boolean = false;
+  private _userIsAuthenticated: boolean = true;
+  private _userID: string = 'xyz';
 
   public get userIsAuthenticated(): boolean {
     return this._userIsAuthenticated;
+  }
+
+  public get userID(): string {
+    return this._userID;
   }
 
   constructor(

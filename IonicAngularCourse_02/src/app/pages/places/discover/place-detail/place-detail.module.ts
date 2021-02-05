@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 import { IonicModule } from '@ionic/angular';
 
@@ -12,6 +13,7 @@ import { CreateBookingComponent } from '../../../bookings/create-booking/create-
   imports: [
     CommonModule,
     IonicModule,
+    FormsModule,
     PlaceDetailPageRoutingModule
   ],
   declarations: [
