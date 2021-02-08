@@ -31,14 +31,18 @@ export class OffersPage implements OnInit, OnDestroy {
 
   ionViewWillEnter(): void {
     this.isLoading = true;
+
     this._fetchPlacesSubscription = this.placesService.fetchPlaces().subscribe(() => {
       this.isLoading = false;
     });
   }
 
   ngOnDestroy(): void {
-    if (this._placesSubscription) {
+    if (this._fetchPlacesSubscription) {
       this._fetchPlacesSubscription.unsubscribe();
+    }
+
+    if (this._placesSubscription) {
       this._placesSubscription.unsubscribe();
     }
   }

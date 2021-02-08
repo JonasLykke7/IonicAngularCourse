@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute, ParamMap } from '@angular/router';
-import { ActionSheetController, LoadingController, ModalController, NavController } from '@ionic/angular';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { ActionSheetController, AlertController, LoadingController, ModalController, NavController } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
 import { AuthService } from '../../../../services/auth/auth.service';
@@ -18,12 +18,15 @@ import { CreateBookingComponent } from '../../../bookings/create-booking/create-
 })
 export class PlaceDetailPage implements OnInit, OnDestroy {
   private _placeSubscription: Subscription;
+  public isLoading: boolean = false;
   public place: Place;
   public isBookable: boolean = false;
 
   constructor(
     private activatedRoute: ActivatedRoute,
+    private router: Router,
     private navController: NavController,
+    private alertController: AlertController,
     private actionSheetController: ActionSheetController,
     private modalController: ModalController,
     private loadingController: LoadingController,
@@ -40,10 +43,29 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
         return;
       }
 
+      this.isLoading = true;
+
       this._placeSubscription = this.placesService.getPlace(paramMap.get('placeID')).subscribe((place: Place) => {
         this.place = place;
-        
+
         this.isBookable = this.place.userID !== this.authService.userID;
+
+        this.isLoading = false;
+      }, (error) => {
+        this.alertController.create({
+          header: 'An error occurred!',
+          message: 'Could not load place.',
+          buttons: [
+            {
+              text: 'Okay',
+              handler: () => {
+                this.router.navigate(['/places/tabs/discover']);
+              }
+            }
+          ]
+        }).then((alert) => {
+          alert.present();
+        });
       });
     });
   }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { delay, map, switchMap, take, tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { map, switchMap, take, tap } from 'rxjs/operators';
 
 import { AuthService } from '../auth/auth.service';
 
@@ -87,13 +87,13 @@ export class PlacesService {
       );
   }
 
-  public getPlace(id: string): Observable<Place> {
-    return this.places.pipe(
-      take(1),
-      map((places: Place[]) => {
-        return { ...places.find((p: Place) => p.id === id) };
-      })
-    );
+  public getPlace(id: string) {
+    return this.httpClient.get(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}/${id}.json`)
+      .pipe(
+        map((place: any) => {
+          return new Place(id, place.title, place.description, place.imageURL, place.price, new Date(place.availableFrom), new Date(place.availableTo), place.userID);
+        })
+      );
   }
 
   public addPlace(title: string, description: string, price: number, dateFrom: Date, dateTo: Date): Observable<Place[]> {
@@ -120,7 +120,15 @@ export class PlacesService {
     let updatedPlaces: Place[];
 
     return this.places.pipe(
-      take(1), switchMap((places: Place[]) => {
+      take(1),
+      switchMap((places: Place[]) => {
+        if (!places || places.length <= 0) {
+          return this.fetchPlaces();
+        } else {
+          return of(places);
+        }
+      }),
+      switchMap((places: Place[]) => {
         const updatedPlaceIndex: number = places.findIndex(place => place.id === id);
         updatedPlaces = [...places];
 

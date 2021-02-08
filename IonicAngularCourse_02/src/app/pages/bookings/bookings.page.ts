@@ -12,7 +12,9 @@ import { Booking } from '../../models/booking.model';
   styleUrls: ['./bookings.page.scss'],
 })
 export class BookingsPage implements OnInit, OnDestroy {
-  private _bookingSubscription: Subscription;
+  private _fetchBookingsSubscription: Subscription;
+  private _bookingsSubscription: Subscription;
+  public isLoading: boolean = false;
   public bookings: Booking[];
 
   constructor(
@@ -21,14 +23,26 @@ export class BookingsPage implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    this._bookingSubscription = this.bookingService.bookings.subscribe((bookings: Booking[]) => {
+    this._bookingsSubscription = this.bookingService.bookings.subscribe((bookings: Booking[]) => {
       this.bookings = bookings;
     });
   }
 
+  ionViewWillEnter(): void {
+    this.isLoading = true;
+
+    this._fetchBookingsSubscription = this.bookingService.fetchBookings().subscribe(() => {
+      this.isLoading = false;
+    });
+  }
+
   ngOnDestroy(): void {
-    if (this._bookingSubscription) {
-      this._bookingSubscription.unsubscribe();
+    if (this._fetchBookingsSubscription) {
+      this._fetchBookingsSubscription.unsubscribe();
+    }
+
+    if (this._bookingsSubscription) {
+      this._bookingsSubscription.unsubscribe();
     }
   }
 

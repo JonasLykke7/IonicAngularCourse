@@ -14,10 +14,12 @@ import { Place } from '../../../models/place.model';
   styleUrls: ['./discover.page.scss'],
 })
 export class DiscoverPage implements OnInit, OnDestroy {
+  private _fetchPlacesSubscription: Subscription;
   private _placesSubscription: Subscription;
   public places: Place[];
   public listedPlaces: Place[];
   public relevantPlaces: Place[];
+  public isLoading: boolean = false;
 
   constructor(
     private menuController: MenuController,
@@ -34,7 +36,19 @@ export class DiscoverPage implements OnInit, OnDestroy {
     });
   }
 
+  ionViewWillEnter(): void {
+    this.isLoading = true;
+
+    this._fetchPlacesSubscription = this.placesService.fetchPlaces().subscribe(() => {
+      this.isLoading = false;
+    });
+  }
+
   ngOnDestroy(): void {
+    if (this._fetchPlacesSubscription) {
+      this._fetchPlacesSubscription.unsubscribe();
+    }
+
     if (this._placesSubscription) {
       this._placesSubscription.unsubscribe();
     }
