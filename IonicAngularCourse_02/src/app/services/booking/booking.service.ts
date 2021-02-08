@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { delay, map, switchMap, take, tap } from 'rxjs/operators';
+import { map, switchMap, take, tap } from 'rxjs/operators';
 
 import { AuthService } from '../auth/auth.service';
+import { environment } from '../../../environments/environment';
 
 import { Booking } from '../../models/booking.model';
 
@@ -23,8 +24,8 @@ interface IBookingData {
   providedIn: 'root'
 })
 export class BookingService {
-  private _firebaseDatabaseURL: string = 'https://ionic-angular-course-a67b4-default-rtdb.europe-west1.firebasedatabase.app';
-  private _offeredPlacesURL: string = '/bookings';
+  private _firebaseDatabaseURL: string = environment.firebaseDatabaseURL;
+  private _bookingsPlacesURL: string = environment.bookingsURL;
 
   private _bookings: BehaviorSubject<Booking[]> = new BehaviorSubject<Booking[]>([]);
 
@@ -38,7 +39,7 @@ export class BookingService {
   ) { }
 
   public fetchBookings(): Observable<any[]> {
-    return this.httpClient.get<{ [key: string]: IBookingData }>(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}.json?orderBy="userID"&equalTo="${this.authService.userID}"`)
+    return this.httpClient.get<{ [key: string]: IBookingData }>(`${this._firebaseDatabaseURL}${this._bookingsPlacesURL}.json?orderBy="userID"&equalTo="${this.authService.userID}"`)
       .pipe(
         map((bookingData) => {
           const bookings = [];
@@ -61,7 +62,7 @@ export class BookingService {
 
     const booking = new Booking(Math.random().toString(), placeID, this.authService.userID, placeIitle, placeImage, firstName, lastName, guestNumber, dateFrom, dateTo);
 
-    return this.httpClient.post<{ name: string }>(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}.json`, { ...booking, id: null })
+    return this.httpClient.post<{ name: string }>(`${this._firebaseDatabaseURL}${this._bookingsPlacesURL}.json`, { ...booking, id: null })
       .pipe(
         switchMap((response) => {
           generatedID = response.name;
@@ -78,7 +79,7 @@ export class BookingService {
   }
 
   public cancelBooking(id: string) {
-    return this.httpClient.delete(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}/${id}.json`)
+    return this.httpClient.delete(`${this._firebaseDatabaseURL}${this._bookingsPlacesURL}/${id}.json`)
       .pipe(
         switchMap(() => {
           return this.bookings;

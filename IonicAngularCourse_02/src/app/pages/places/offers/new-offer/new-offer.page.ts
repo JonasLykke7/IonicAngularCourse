@@ -5,6 +5,8 @@ import { LoadingController } from '@ionic/angular';
 
 import { PlacesService } from '../../../../services/places/places.service';
 
+import { PlaceLocation } from '../../../../models/location.model';
+
 @Component({
   selector: 'app-new-offer',
   templateUrl: './new-offer.page.html',
@@ -25,12 +27,22 @@ export class NewOfferPage implements OnInit {
       description: new FormControl(null, { updateOn: 'blur', validators: [Validators.required, Validators.maxLength(180)] }),
       price: new FormControl(null, { updateOn: 'blur', validators: [Validators.required, Validators.min(1)] }),
       dateFrom: new FormControl(null, { updateOn: 'blur', validators: [Validators.required] }),
-      dateTo: new FormControl(null, { updateOn: 'blur', validators: [Validators.required] })
+      dateTo: new FormControl(null, { updateOn: 'blur', validators: [Validators.required] }),
+      location: new FormControl(null, { validators: [Validators.required] }),
+      image: new FormControl(null)
     });
   }
 
+  public onLocationPicked(location: PlaceLocation): void {
+    this.form.patchValue({ location: location });
+  }
+
+  public onImagePicked(image: string): void {
+    this.form.patchValue({ image: image });
+  }
+
   public onCreateOffer(): void {
-    if (!this.form.valid) {
+    if (!this.form.valid || !this.form.get('image').value) {
       return;
     }
 
@@ -39,9 +51,11 @@ export class NewOfferPage implements OnInit {
     }).then((loading) => {
       loading.present();
 
-      this.placesService.addPlace(this.form.value.title, this.form.value.description, +this.form.value.price, new Date(this.form.value.dateFrom), new Date(this.form.value.dateTo)).subscribe(() => {
+      this.placesService.addPlace(this.form.value.title, this.form.value.description, +this.form.value.price, new Date(this.form.value.dateFrom), new Date(this.form.value.dateTo), this.form.value.location).subscribe(() => {
         this.form.reset();
+
         loading.dismiss();
+
         this.router.navigate(['/places/tabs/offers']);
       });
     });

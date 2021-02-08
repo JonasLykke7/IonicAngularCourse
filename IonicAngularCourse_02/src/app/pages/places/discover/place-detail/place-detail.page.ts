@@ -9,6 +9,7 @@ import { BookingService } from '../../../../services/booking/booking.service';
 
 import { Place } from '../../../../models/place.model';
 
+import { MapModalComponent } from '../../../../shared/map-modal/map-modal.component';
 import { CreateBookingComponent } from '../../../bookings/create-booking/create-booking.component';
 
 @Component({
@@ -27,8 +28,8 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
     private router: Router,
     private navController: NavController,
     private alertController: AlertController,
-    private actionSheetController: ActionSheetController,
     private modalController: ModalController,
+    private actionSheetController: ActionSheetController,
     private loadingController: LoadingController,
     private authService: AuthService,
     private placesService: PlacesService,
@@ -75,6 +76,27 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
       this._placeSubscription.unsubscribe();
     }
   }
+
+  public onShowFullMap(): void {
+    this.modalController
+      .create({
+        component: MapModalComponent,
+        componentProps: {
+          center: {
+            lat: this.place.location.lat,
+            lng: this.place.location.long
+          },
+
+          selectable: false,
+          closeButtonText: 'Close',
+          title: this.place.location.address
+        }
+      })
+      .then((modal) => {
+        modal.present();
+      });
+  }
+
 
   public onBookPlace(): void {
     this.actionSheetController.create({

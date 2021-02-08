@@ -3,7 +3,13 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+
+  firebaseDatabaseURL: 'https://ionicangularcourse-f9b9b-default-rtdb.europe-west1.firebasedatabase.app',
+  offeredPlacesURL: '/offeredPlaces',
+  bookingsURL: '/bookings',
+
+  googleMapsAPIKey: 'AIzaSyB3P1U1KZYcRvql3VMXl2-g5GQlaK6AVlQ'
 };
 
 /*

@@ -19,8 +19,10 @@
     "@angular/platform-browser": "~11.1.2",
     "@angular/platform-browser-dynamic": "~11.1.2",
     "@angular/router": "~11.1.2",
+    "@capacitor/android": "^2.4.6",
     "@capacitor/core": "2.4.6",
     "@ionic/angular": "^5.5.4",
+    "@ionic/pwa-elements": "^3.0.2",
     "rxjs": "~6.6.3",
     "tslib": "^2.1.0",
     "zone.js": "~0.11.3"
