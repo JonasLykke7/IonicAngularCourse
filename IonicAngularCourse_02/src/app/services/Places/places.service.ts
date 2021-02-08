@@ -99,10 +99,18 @@ export class PlacesService {
       );
   }
 
-  public addPlace(title: string, description: string, price: number, dateFrom: Date, dateTo: Date, location: PlaceLocation): Observable<Place[]> {
+  public uploadImage(image: File) {
+    const uploadData = new FormData();
+
+    uploadData.append('image', image);
+
+    return this.httpClient.post<{ imageUrl: string, imagePath: string }>('https://us-central1-ionicangularcourse-f9b9b.cloudfunctions.net/storeImage', uploadData);
+  }
+
+  public addPlace(title: string, description: string, price: number, dateFrom: Date, dateTo: Date, location: PlaceLocation, imageURL: string): Observable<Place[]> {
     let generatedID: string;
 
-    const place: Place = new Place(Math.random().toString(), title, description, 'https://lonelyplanetimages.imgix.net/mastheads/GettyImages-538096543_medium.jpg?sharp=10&vib=20&w=1200', price, dateFrom, dateTo, this.authService.userID, location);
+    const place: Place = new Place(Math.random().toString(), title, description, imageURL, price, dateFrom, dateTo, this.authService.userID, location);
 
     return this.httpClient.post<{ name: string }>(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}.json`, { ...place, id: null })
       .pipe(
