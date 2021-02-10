@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MenuController } from '@ionic/angular';
 import { SegmentChangeEventDetail } from '@ionic/core';
 import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 import { PlacesService } from '../../../services/places/places.service';
 import { AuthService } from '../../../services/auth/auth.service';
@@ -59,13 +60,15 @@ export class DiscoverPage implements OnInit, OnDestroy {
   }
 
   public onFilterUpdate(event: CustomEvent<SegmentChangeEventDetail>): void {
-    if (event.detail.value === 'all') {
-      this.relevantPlaces = this.places;
-      this.listedPlaces = this.relevantPlaces.slice(1);
-    } else {
-      this.relevantPlaces = this.places.filter(place => place.userID !== this.authService.userID);
-      this.listedPlaces = this.relevantPlaces.slice(1);
-    }
+    this.authService.userID.pipe(take(1)).subscribe((userID) => {
+      if (event.detail.value === 'all') {
+        this.relevantPlaces = this.places;
+        this.listedPlaces = this.relevantPlaces.slice(1);
+      } else {
+        this.relevantPlaces = this.places.filter(place => place.userID !== userID);
+        this.listedPlaces = this.relevantPlaces.slice(1);
+      }
+    });
   }
 
 }

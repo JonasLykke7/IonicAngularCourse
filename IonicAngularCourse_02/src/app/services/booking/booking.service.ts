@@ -26,6 +26,7 @@ interface IBookingData {
 export class BookingService {
   private _firebaseDatabaseURL: string = environment.firebaseDatabaseURL;
   private _bookingsPlacesURL: string = environment.bookingsURL;
+  private _authURL: string = '?auth=';
 
   private _bookings: BehaviorSubject<Booking[]> = new BehaviorSubject<Booking[]>([]);
 
@@ -38,56 +39,93 @@ export class BookingService {
     private authService: AuthService
   ) { }
 
-  public fetchBookings(): Observable<any[]> {
-    return this.httpClient.get<{ [key: string]: IBookingData }>(`${this._firebaseDatabaseURL}${this._bookingsPlacesURL}.json?orderBy="userID"&equalTo="${this.authService.userID}"`)
-      .pipe(
-        map((bookingData) => {
-          const bookings = [];
+  public fetchBookings() {
+    let fetchedUserID: string;
 
-          for (const key in bookingData) {
-            if (Object.prototype.hasOwnProperty.call(bookingData, key)) {
-              bookings.push(new Booking(key, bookingData[key].placeID, bookingData[key].userID, bookingData[key].placeTitle, bookingData[key].placeImage, bookingData[key].firstName, bookingData[key].lastName, bookingData[key].guestNumber, new Date(bookingData[key].bookedFrom), new Date(bookingData[key].bookedTo)));
-            }
+    return this.authService.userID.pipe(take(1), switchMap(userID => {
+      if (!userID) {
+        throw new Error('User not found!');
+      }
+
+      fetchedUserID = userID;
+
+      return this.authService.token;
+    }),
+      take(1),
+      switchMap((token) => {
+        return this.httpClient.get<{ [key: string]: IBookingData }>(`${this._firebaseDatabaseURL}${this._bookingsPlacesURL}.json?orderBy="userID"&equalTo="${fetchedUserID}"${this._authURL}${token}`)
+      }),
+      map((bookingData) => {
+        const bookings = [];
+
+        for (const key in bookingData) {
+          if (Object.prototype.hasOwnProperty.call(bookingData, key)) {
+            bookings.push(new Booking(key, bookingData[key].placeID, bookingData[key].userID, bookingData[key].placeTitle, bookingData[key].placeImage, bookingData[key].firstName, bookingData[key].lastName, bookingData[key].guestNumber, new Date(bookingData[key].bookedFrom), new Date(bookingData[key].bookedTo)));
           }
+        }
 
-          return bookings;
-        }), tap((bookings) => {
-          this._bookings.next(bookings);
-        })
-      );
+        return bookings;
+      }), tap((bookings) => {
+        this._bookings.next(bookings);
+      })
+    );
   }
 
-  public addBooking(placeID: string, placeIitle: string, placeImage: string, firstName: string, lastName: string, guestNumber: number, dateFrom: Date, dateTo: Date): Observable<Booking[]> {
+  public addBooking(placeID: string, placeTitle: string, placeImage: string, firstName: string, lastName: string, guestNumber: number, dateFrom: Date, dateTo: Date) {
     let generatedID: string;
+    let fetchedUserID: string;
+    let newBooking: Booking;
 
-    const booking = new Booking(Math.random().toString(), placeID, this.authService.userID, placeIitle, placeImage, firstName, lastName, guestNumber, dateFrom, dateTo);
+    return this.authService.userID.pipe(take(1), switchMap(userID => {
+      if (!userID) {
+        throw new Error('No user ID found!');
+      }
 
-    return this.httpClient.post<{ name: string }>(`${this._firebaseDatabaseURL}${this._bookingsPlacesURL}.json`, { ...booking, id: null })
-      .pipe(
-        switchMap((response) => {
-          generatedID = response.name;
+      fetchedUserID = userID;
 
-          return this.bookings;
-        }),
-        take(1),
-        tap((bookings: Booking[]) => {
-          booking.id = generatedID;
+      return this.authService.token;
+    }),
+      take(1),
+      switchMap((token) => {
+        newBooking = new Booking(
+          Math.random().toString(),
+          placeID,
+          fetchedUserID,
+          placeTitle,
+          placeImage,
+          firstName,
+          lastName,
+          guestNumber,
+          dateFrom,
+          dateTo
+        );
 
-          this._bookings.next(bookings.concat(booking));
-        })
-      );
+        return this.httpClient.post<{ name: string }>(`${this._firebaseDatabaseURL}${this._bookingsPlacesURL}.json${this._authURL}${token}`, { ...newBooking, id: null });
+      }),
+      switchMap(resData => {
+        generatedID = resData.name;
+
+        return this.bookings;
+      }),
+      take(1),
+      tap(bookings => {
+        newBooking.id = generatedID;
+        this._bookings.next(bookings.concat(bookings));
+      })
+    );
   }
 
   public cancelBooking(id: string) {
-    return this.httpClient.delete(`${this._firebaseDatabaseURL}${this._bookingsPlacesURL}/${id}.json`)
-      .pipe(
-        switchMap(() => {
-          return this.bookings;
-        }),
-        take(1),
-        tap((bookings) => {
-          this._bookings.next(bookings.filter(b => b.id !== id));
-        })
-      );
+    return this.authService.token.pipe(take(1), switchMap(token => {
+      return this.httpClient.delete(`${this._firebaseDatabaseURL}${this._bookingsPlacesURL}/${id}.json${this._authURL}${token}`)
+    }),
+      switchMap(() => {
+        return this.bookings;
+      }),
+      take(1),
+      tap((bookings) => {
+        this._bookings.next(bookings.filter(b => b.id !== id));
+      })
+    );
   }
 }

@@ -59,6 +59,7 @@ interface IPlaceData {
 export class PlacesService {
   private _firebaseDatabaseURL: string = environment.firebaseDatabaseURL;
   private _offeredPlacesURL: string = environment.offeredPlacesURL;
+  private _authURL: string = '?auth=';
 
   private _places: BehaviorSubject<Place[]> = new BehaviorSubject<Place[]>([]);
 
@@ -72,31 +73,33 @@ export class PlacesService {
   ) { }
 
   public fetchPlaces() {
-    return this.httpClient.get<{ [key: string]: IPlaceData }>(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}.json`)
-      .pipe(map((response) => {
-        const places = [];
+    return this.authService.token.pipe(take(1), switchMap((token: string) => {
+      return this.httpClient.get<{ [key: string]: IPlaceData }>(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}.json${this._authURL}${token}`)
+    }), map((response) => {
+      const places = [];
 
-        for (const key in response) {
-          if (response.hasOwnProperty(key)) {
-            places.push(new Place(key, response[key].title, response[key].description, response[key].imageURL, response[key].price, new Date(response[key].availableFrom), new Date(response[key].availableTo), response[key].userID, response[key].location));
-          }
+      for (const key in response) {
+        if (response.hasOwnProperty(key)) {
+          places.push(new Place(key, response[key].title, response[key].description, response[key].imageURL, response[key].price, new Date(response[key].availableFrom), new Date(response[key].availableTo), response[key].userID, response[key].location));
         }
+      }
 
-        return places;
-      }),
-        tap((places: Place[]) => {
-          this._places.next(places);
-        })
-      );
+      return places;
+    }),
+      tap((places: Place[]) => {
+        this._places.next(places);
+      })
+    );
   }
 
   public getPlace(id: string) {
-    return this.httpClient.get(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}/${id}.json`)
-      .pipe(
-        map((place: any) => {
-          return new Place(id, place.title, place.description, place.imageURL, place.price, new Date(place.availableFrom), new Date(place.availableTo), place.userID, place.location);
-        })
-      );
+    return this.authService.token.pipe(take(1), switchMap((token: string) => {
+      return this.httpClient.get(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}/${id}.json${this._authURL}${token}`)
+    }),
+      map((place: any) => {
+        return new Place(id, place.title, place.description, place.imageURL, place.price, new Date(place.availableFrom), new Date(place.availableTo), place.userID, place.location);
+      })
+    );
   }
 
   public uploadImage(image: File) {
@@ -104,33 +107,50 @@ export class PlacesService {
 
     uploadData.append('image', image);
 
-    return this.httpClient.post<{ imageUrl: string, imagePath: string }>('https://us-central1-ionicangularcourse-f9b9b.cloudfunctions.net/storeImage', uploadData);
+    return this.authService.token.pipe(take(1), switchMap((token: string) => {
+      return this.httpClient.post<{ imageUrl: string, imagePath: string }>('https://us-central1-ionicangularcourse-f9b9b.cloudfunctions.net/storeImage', uploadData, { headers: { Authorization: 'Bearer ' + token } });
+    }));
   }
 
   public addPlace(title: string, description: string, price: number, dateFrom: Date, dateTo: Date, location: PlaceLocation, imageURL: string): Observable<Place[]> {
     let generatedID: string;
+    let fetchedUserID: string;
+    let newPlace: Place;
 
-    const place: Place = new Place(Math.random().toString(), title, description, imageURL, price, dateFrom, dateTo, this.authService.userID, location);
+    return this.authService.userID.pipe(take(1), switchMap(userID => {
+      fetchedUserID = userID;
+      return this.authService.token;
+    }), take(1), switchMap(token => {
+      if (!fetchedUserID) {
+        throw new Error('No user found!');
+      }
 
-    return this.httpClient.post<{ name: string }>(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}.json`, { ...place, id: null })
-      .pipe(
-        switchMap((response) => {
-          generatedID = response.name;
+      newPlace = new Place(Math.random().toString(), title, description, imageURL, price, dateFrom, dateTo, fetchedUserID, location);
 
-          return this.places;
-        }),
-        take(1),
-        tap((places: Place[]) => {
-          place.id = generatedID;
-          this._places.next(places.concat(place));
-        })
-      );
+      return this.httpClient.post<{ name: string }>(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}.json${this._authURL}${token}`, { ...newPlace, id: null })
+    }),
+      switchMap((response) => {
+        generatedID = response.name;
+
+        return this.places;
+      }),
+      take(1),
+      tap((places: Place[]) => {
+        newPlace.id = generatedID;
+        this._places.next(places.concat(newPlace));
+      })
+    );
   }
 
   public updatePlace(id: string, title: string, description: string) {
     let updatedPlaces: Place[];
+    let fetchedToken: string;
 
-    return this.places.pipe(
+    return this.authService.token.pipe(take(1), switchMap((token: string) => {
+      fetchedToken = token;
+
+      return this.places;
+    }),
       take(1),
       switchMap((places: Place[]) => {
         if (!places || places.length <= 0) {
@@ -146,7 +166,7 @@ export class PlacesService {
         const oldPlace: Place = updatedPlaces[updatedPlaceIndex];
         updatedPlaces[updatedPlaceIndex] = new Place(oldPlace.id, title, description, oldPlace.imageURL, oldPlace.price, oldPlace.availableFrom, oldPlace.availableTo, oldPlace.userID, oldPlace.location);
 
-        return this.httpClient.put(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}/${id}.json`, { ...updatedPlaces[updatedPlaceIndex], id: null });
+        return this.httpClient.put(`${this._firebaseDatabaseURL}${this._offeredPlacesURL}/${id}.json${this._authURL}${fetchedToken}`, { ...updatedPlaces[updatedPlaceIndex], id: null });
       }),
       tap(() => {
         this._places.next(updatedPlaces);

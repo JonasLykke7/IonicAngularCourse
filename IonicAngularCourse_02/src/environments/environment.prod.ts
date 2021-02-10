@@ -5,5 +5,6 @@ export const environment = {
   offeredPlacesURL: '/offeredPlaces',
   bookingsURL: '/bookings',
 
-  googleMapsAPIKey: 'AIzaSyB3P1U1KZYcRvql3VMXl2-g5GQlaK6AVlQ'
+  googleMapsAPIKey: 'AIzaSyB3P1U1KZYcRvql3VMXl2-g5GQlaK6AVlQ',
+  firebaseAPIKey: 'AIzaSyAdihnuCzMl8UMJNgCFbP4ETV_JTgTT2pc'
 };
