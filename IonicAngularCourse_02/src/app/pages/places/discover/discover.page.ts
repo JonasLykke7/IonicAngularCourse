@@ -1,6 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MenuController } from '@ionic/angular';
-import { SegmentChangeEventDetail } from '@ionic/core';
 import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 
@@ -59,7 +58,7 @@ export class DiscoverPage implements OnInit, OnDestroy {
     this.menuController.toggle();
   }
 
-  public onFilterUpdate(event: CustomEvent<SegmentChangeEventDetail>): void {
+  public onFilterUpdate(event): void {
     this.authService.userID.pipe(take(1)).subscribe((userID) => {
       if (event.detail.value === 'all') {
         this.relevantPlaces = this.places;

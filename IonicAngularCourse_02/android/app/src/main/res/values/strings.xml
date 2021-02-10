@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">IonicAngularCourse</string>
-    <string name="title_activity_main">IonicAngularCourse</string>
-    <string name="package_name">com.udemycourse.ionicangular</string>
-    <string name="custom_url_scheme">com.udemycourse.ionicangular</string>
-</resources>
